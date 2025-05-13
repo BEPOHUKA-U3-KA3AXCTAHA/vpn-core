@@ -14,3 +14,13 @@ spring:
       hibernate.format_sql: true
   application:
     name: vpn-service
+
+logging:
+  level:
+    org.springframework.web: DEBUG  # Логирование для Spring Web
+    org.springframework.web.servlet: TRACE  # Логирование HTTP-запросов
+    com.vpnservice: DEBUG
+    org.hibernate.SQL: DEBUG  # Логгирование SQL-запросов
+    org.hibernate.type.descriptor.sql: TRACE  # Логгирование SQL-типов
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
