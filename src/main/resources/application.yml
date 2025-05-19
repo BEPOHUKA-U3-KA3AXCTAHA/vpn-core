@@ -8,10 +8,13 @@ spring:
     password: camunda
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none  # Обновляем на 'none', так как Flyway будет управлять схемой БД
     show-sql: true
     properties:
       hibernate.format_sql: true
+  flyway:
+    enabled: true  # Включаем Flyway
+    locations: classpath:db/migration  # Указываем папку, где будут храниться SQL миграции
   application:
     name: vpn-service
 
