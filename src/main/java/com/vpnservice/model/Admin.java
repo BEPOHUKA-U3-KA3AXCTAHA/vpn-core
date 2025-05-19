@@ -2,6 +2,7 @@ package com.vpnservice.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "admins")
@@ -19,6 +20,9 @@ public class Admin {
 
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(nullable = true, unique = true)
+    private String token;
 
     // --- Constructors ---
     public Admin() {}
@@ -52,5 +56,13 @@ public class Admin {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
     }
 }

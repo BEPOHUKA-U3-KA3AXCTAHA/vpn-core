@@ -23,6 +23,7 @@ public class UserRepositoryTest {
         user.setEmail("test@mail.com");
         user.setPasswordHash("123456");
         user.setBalance(0.0);
+        user.setToken("usertoken123");
         return userRepository.save(user);
     }
 
@@ -33,7 +34,7 @@ public class UserRepositoryTest {
     }
 
     @Test
-    public void testReadUser() {
+    public void testFindByEmail() {
         // Сначала создаём пользователя
         createTestUser();
 
@@ -67,5 +68,29 @@ public class UserRepositoryTest {
 
         Optional<User> deleted = userRepository.findByEmail("test@mail.com");
         assertFalse(deleted.isPresent());
+    }
+
+    @Test
+    public void testFindByEmailAndPasswordHash() {
+        User user = createTestUser();
+        Optional<User> found = userRepository.findByEmailAndPasswordHash("test@mail.com", "123456");
+        assertTrue(found.isPresent());
+        assertEquals(user.getId(), found.get().getId());
+    }
+
+    @Test
+    public void testFindById() {
+        User user = createTestUser();
+        Optional<User> found = userRepository.findById(user.getId());
+        assertTrue(found.isPresent());
+        assertEquals(user.getEmail(), found.get().getEmail());
+    }
+
+    @Test
+    public void testFindByToken() {
+        User user = createTestUser();
+        Optional<User> found = userRepository.findByToken("usertoken123");
+        assertTrue(found.isPresent());
+        assertEquals(user.getEmail(), found.get().getEmail());
     }
 }

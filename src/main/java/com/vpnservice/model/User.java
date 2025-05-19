@@ -3,6 +3,7 @@ package com.vpnservice.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "users")
@@ -21,7 +22,7 @@ public class User {
     @Column(nullable = false)
     private Double balance = 0.0;
 
-    @Column
+    @Column(nullable = true, unique = true)
     private String token;
 
     @Column(nullable = false)

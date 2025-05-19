@@ -6,6 +6,8 @@ import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -48,8 +50,8 @@ public class TransactionRepositoryTest {
     public void testReadTransactionsByUser() {
         User user = createTestUser();
         createTestTransaction(user);
-
-        List<Transaction> list = transactionRepository.findByUser(user);
+        Pageable pageable = PageRequest.of(0, 10);
+        List<Transaction> list = transactionRepository.findByUser(user, pageable).getContent();
         assertEquals(1, list.size());
     }
 
@@ -59,7 +61,8 @@ public class TransactionRepositoryTest {
         Transaction tx = createTestTransaction(user);
         transactionRepository.delete(tx);
 
-        List<Transaction> list = transactionRepository.findByUser(user);
+        Pageable pageable = PageRequest.of(0, 10);
+        List<Transaction> list = transactionRepository.findByUser(user, pageable).getContent();
         assertEquals(0, list.size());
     }
 }

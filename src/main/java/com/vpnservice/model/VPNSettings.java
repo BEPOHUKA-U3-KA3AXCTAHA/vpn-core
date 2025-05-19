@@ -10,26 +10,39 @@ public class VPNSettings {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, unique = true)
+    private String key;
+
     @Column(nullable = false)
-    private Double vpnPrice;  // Цена VPN-доступа
+    private String value;
 
     // --- Constructors ---
     public VPNSettings() {}
 
-    public VPNSettings(Double vpnPrice) {
-        this.vpnPrice = vpnPrice;
+    public VPNSettings(String key, String value) {
+        this.key = key;
+        this.value = value;
     }
 
     // --- Getters and Setters ---
+
     public Long getId() {
         return id;
     }
 
-    public Double getVpnPrice() {
-        return vpnPrice;
+    public String getKey() {
+        return key;
     }
 
-    public void setVpnPrice(Double vpnPrice) {
-        this.vpnPrice = vpnPrice;
+    public void setKey(String key) {
+        this.key = key;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
     }
 }

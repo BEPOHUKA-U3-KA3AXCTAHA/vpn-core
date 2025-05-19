@@ -21,6 +21,7 @@ public class AdminRepositoryTest {
         Admin admin = new Admin();
         admin.setEmail("admin@mail.com");
         admin.setPasswordHash("adminpass");
+        admin.setToken("sometoken123");
         return adminRepository.save(admin);
     }
 
@@ -31,7 +32,7 @@ public class AdminRepositoryTest {
     }
 
     @Test
-    public void testReadAdmin() {
+    public void testFindByEmail() {
         createTestAdmin();
         Optional<Admin> found = adminRepository.findByEmail("admin@mail.com");
         assertTrue(found.isPresent());
@@ -55,5 +56,29 @@ public class AdminRepositoryTest {
 
         Optional<Admin> deleted = adminRepository.findByEmail("admin@mail.com");
         assertFalse(deleted.isPresent());
+    }
+
+    @Test
+    public void testFindByEmailAndPasswordHash() {
+        Admin admin = createTestAdmin();
+        Optional<Admin> found = adminRepository.findByEmailAndPasswordHash("admin@mail.com", "adminpass");
+        assertTrue(found.isPresent());
+        assertEquals(admin.getId(), found.get().getId());
+    }
+
+    @Test
+    public void testFindById() {
+        Admin admin = createTestAdmin();
+        Optional<Admin> found = adminRepository.findById(admin.getId());
+        assertTrue(found.isPresent());
+        assertEquals(admin.getEmail(), found.get().getEmail());
+    }
+
+    @Test
+    public void testFindByToken() {
+        Admin admin = createTestAdmin();
+        Optional<Admin> found = adminRepository.findByToken("sometoken123");
+        assertTrue(found.isPresent());
+        assertEquals(admin.getEmail(), found.get().getEmail());
     }
 }

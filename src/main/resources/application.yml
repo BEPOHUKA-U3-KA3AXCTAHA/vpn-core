@@ -3,7 +3,7 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:8100/camunda
+    url: jdbc:postgresql://localhost:8100/vpn_db
     username: camunda
     password: camunda
   jpa:
