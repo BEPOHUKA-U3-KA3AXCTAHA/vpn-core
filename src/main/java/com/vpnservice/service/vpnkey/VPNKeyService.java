@@ -1,11 +1,16 @@
 package com.vpnservice.service.vpnkey;
 
+import com.vpnservice.exception.NotFoundException;
 import com.vpnservice.model.VPNKey;
 
-import java.util.List;
+import java.util.Optional;
 
 public interface VPNKeyService {
-    VPNKey generateKey(Long userId);
+    void generateKey(Long userId);
     void revokeKey(Long keyId);
-    List<VPNKey> getKeysByUser(Long userId);
+    void revokeOldKeys();
+    Optional<VPNKey> getKeyByUser(Long id);
+    Optional<VPNKey> getKeyByUsername(String username);
+    void updateKey(VPNKey key);
+    String getVPNConfig(String username);
 }

@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -48,8 +48,8 @@ public class VpnKeyRepositoryTest {
         User user = createTestUser();
         createTestVpnKey(user);
 
-        List<VPNKey> keys = vpnKeyRepository.findByUser(user);
-        assertEquals(1, keys.size());
+        Optional<VPNKey> key = vpnKeyRepository.findByUser(user);
+        assertTrue(key.isPresent());
     }
 
     @Test
@@ -58,7 +58,6 @@ public class VpnKeyRepositoryTest {
         VPNKey key = createTestVpnKey(user);
         vpnKeyRepository.delete(key);
 
-        List<VPNKey> keys = vpnKeyRepository.findByUser(user);
-        assertTrue(keys.isEmpty());
-    }
+        Optional<VPNKey> noKey = vpnKeyRepository.findByUser(user);
+        assertFalse(noKey.isPresent());}
 }

@@ -4,6 +4,6 @@ import com.vpnservice.model.Transaction;
 import java.util.List;
 
 public interface TransactionService {
-    Transaction processTopUp(Long userId, Double amount);
+    Transaction processTopUp(String username, Double amount);
     List<Transaction> getTransactionsByUser(Long userId);
 }

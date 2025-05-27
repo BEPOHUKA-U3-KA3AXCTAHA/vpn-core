@@ -22,7 +22,9 @@ public class Transaction {
     private LocalDateTime date = LocalDateTime.now();
 
     // --- Constructors ---
-    public Transaction() {}
+    public Transaction() {
+        this.date = LocalDateTime.now();
+    }
 
     public Transaction(User user, Double amount) {
         this.user = user;

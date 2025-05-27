@@ -22,7 +22,9 @@ public class VPNKey {
     private LocalDateTime createdAt = LocalDateTime.now();
 
     // --- Constructors ---
-    public VPNKey() {}
+    public VPNKey() {
+        this.createdAt = LocalDateTime.now();
+    }
 
     public VPNKey(User user, String keyData) {
         this.user = user;
@@ -53,5 +55,9 @@ public class VPNKey {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }
