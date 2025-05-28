@@ -1,8 +1,5 @@
 package com.vpnservice.controller;
 
-import com.vpnservice.dto.UserRegistrationRequest;
-import com.vpnservice.model.Transaction;
-import com.vpnservice.model.User;
 import com.vpnservice.service.transaction.TransactionService;
 import com.vpnservice.service.user.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +8,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -23,30 +19,6 @@ public class UserController {
 
     @Autowired
     private TransactionService transactionService;
-
-    @PostMapping("/register")
-    public ResponseEntity<Map<String, Object>> register(@RequestBody UserRegistrationRequest request) {
-        String email = request.getEmail();
-        String password = request.getPassword();
-        userService.register(new User(email, password));
-        Map<String, Object> response = new HashMap<>();
-        response.put("status", "ok");
-        response.put("message", "операция прошла успешно");
-
-        return ResponseEntity.ok(response);
-    }
-
-
-    @PostMapping("/login")
-    public ResponseEntity<Map<String, Object>> login(@RequestParam String email, @RequestParam String password) {
-        userService.login(email, password);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("status", "ok");
-        response.put("message", "операция прошла успешно");
-
-        return ResponseEntity.ok(response);
-    }
 
     @GetMapping("/balance")
     public Double getBalance() {

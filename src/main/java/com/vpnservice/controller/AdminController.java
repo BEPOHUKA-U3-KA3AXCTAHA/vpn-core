@@ -1,6 +1,9 @@
 package com.vpnservice.controller;
 
+import com.vpnservice.dto.UserResponse;
+import com.vpnservice.model.User;
 import com.vpnservice.service.admin.AdminService;
+import com.vpnservice.service.vpnkey.VPNKeyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Min;
@@ -10,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/admin")
 @Tag(name = "Admin API", description = "Админское управление VPN")
@@ -18,6 +23,9 @@ public class AdminController {
 
     @Autowired
     private AdminService adminService;
+
+    @Autowired
+    private VPNKeyService vpnKeyService;
 
     @Operation(summary = "Установить цену VPN")
     @PostMapping("/set-price")
@@ -41,5 +49,23 @@ public class AdminController {
             @PathVariable @NotNull @Min(1) Long userId) {
         adminService.createVPNKeyForUser(userId);
         return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "Все пользователи")
+    @GetMapping("/users")
+    public List<UserResponse> getUsers() {
+        List<User> users = adminService.getUsersList();
+
+        return users.stream()
+                .map(tx -> new UserResponse(
+                        tx.getEmail(),
+                        tx.getId()))
+                .toList();
+    }
+
+    @Operation(summary = "Удалить просроченные ключи у юзеров")
+    @PostMapping("/revoke-old")
+    public void revokeOldKeys() {
+        vpnKeyService.revokeOldKeys();
     }
 }

@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:8100/test_vpn_db
+    driverClassName: org.postgresql.Driver
+    username: camunda
+    password: camunda
+  jpa:
+    hibernate:
+      ddl-auto: update  # Обновлять схему базы данных при старте приложения
+    database-platform: org.hibernate.dialect.PostgreSQLDialect  # Диалект для PostgreSQL
+  flyway:
+    enabled: true  # Включение Flyway для миграции
+    locations: classpath:db/migration  # Миграции должны быть в папке /db/migration
+  security:
+    enabled: false

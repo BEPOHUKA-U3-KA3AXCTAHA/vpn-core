@@ -5,5 +5,5 @@ import java.util.List;
 
 public interface TransactionService {
     Transaction processTopUp(String username, Double amount);
-    List<Transaction> getTransactionsByUser(Long userId);
+    List<Transaction> getTransactionsByUser(String username);
 }

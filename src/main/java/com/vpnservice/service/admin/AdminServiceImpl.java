@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -92,5 +93,10 @@ public class AdminServiceImpl implements AdminService {
             // Если ключа нет, создаём новый
             vpnKeyService.generateKey(userId);
         }
+    }
+
+    @Override
+    public List<User> getUsersList() {
+        return userRepository.findAll();
     }
 }

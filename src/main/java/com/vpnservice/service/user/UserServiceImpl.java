@@ -13,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -38,18 +37,6 @@ public class UserServiceImpl implements UserService {
         user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
         user.setBalance(0.0);
         return userRepository.save(user);
-    }
-
-    @Override
-    public User login(String email, String password) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
-
-        if (!passwordEncoder.matches(password, user.getPasswordHash())) {
-            throw new RuntimeException("Неверный пароль");
-        }
-
-        return user;
     }
 
     @Override
@@ -85,13 +72,5 @@ public class UserServiceImpl implements UserService {
     public User findByUsername(String username) {
         return userRepository.findByEmail(username)
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
-    }
-
-    @Override
-    public void delete(Long id) {
-        if (!userRepository.existsById(id)) {
-            throw new NotFoundException("Пользователь не найден");
-        }
-        userRepository.deleteById(id);
     }
 }

@@ -41,9 +41,9 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public List<Transaction> getTransactionsByUser(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден: " + userId));
+    public List<Transaction> getTransactionsByUser(String username) {
+        User user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден: " + username));
 
         return transactionRepository.findByUser(user, null).getContent();
     }
