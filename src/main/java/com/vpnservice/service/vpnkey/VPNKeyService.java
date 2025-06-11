@@ -8,6 +8,7 @@ import java.util.Optional;
 public interface VPNKeyService {
     void generateKey(Long userId);
     void revokeKey(Long keyId);
+    void notifyExpiringKeys();
     void revokeOldKeys();
     Optional<VPNKey> getKeyByUser(Long id);
     Optional<VPNKey> getKeyByUsername(String username);

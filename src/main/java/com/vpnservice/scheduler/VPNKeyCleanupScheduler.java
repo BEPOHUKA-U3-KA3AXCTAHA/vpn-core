@@ -15,5 +15,6 @@ public class VPNKeyCleanupScheduler {
     @Scheduled(fixedRate = 8000)
     public void cleanupOldKeys() {
         vpnKeyService.revokeOldKeys();
+        vpnKeyService.notifyExpiringKeys();
     }
 }

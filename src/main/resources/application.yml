@@ -28,6 +28,24 @@ spring:
     locations: classpath:db/migration  # Указываем папку, где будут храниться SQL миграции
   application:
     name: vpn-service
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: 111
+    password: 111
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+
 
 logging:
   level:

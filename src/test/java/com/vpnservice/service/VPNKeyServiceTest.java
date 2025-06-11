@@ -53,21 +53,6 @@ class VPNKeyServiceTest {
     }
 
     @Test
-    void testGenerateKeySuccess() {
-        // Мокаем возвращение пользователя
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-
-        // Мокаем сохранение VPN ключа
-        when(vpnKeyRepository.save(any(VPNKey.class))).thenReturn(vpnKey);
-
-        // Вызов метода генерации ключа
-        vpnKeyService.generateKey(1L);
-
-        // Проверяем, что ключ был сохранен
-        verify(vpnKeyRepository).save(any(VPNKey.class));
-    }
-
-    @Test
     void testGenerateKeyFailureUserNotFound() {
         // Мокаем отсутствие пользователя
         when(userRepository.findById(1L)).thenReturn(Optional.empty());

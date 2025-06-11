@@ -1,21 +1,23 @@
 package com.vpnservice.service.vpnkey;
 
 import com.vpnservice.config.ConfigKeys;
+import com.vpnservice.config.RabbitMQConfig;
 import com.vpnservice.exception.NotFoundException;
+import com.vpnservice.messaging.VpnKeyGenerationRequest;
 import com.vpnservice.model.User;
 import com.vpnservice.model.VPNKey;
 import com.vpnservice.repository.UserRepository;
 import com.vpnservice.repository.VPNKeyRepository;
 import com.vpnservice.repository.VPNSettingsRepository;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.Properties;
 
 @Service
 public class VPNKeyServiceImpl implements VPNKeyService {
@@ -30,18 +32,19 @@ public class VPNKeyServiceImpl implements VPNKeyService {
     @Autowired
     private VPNSettingsRepository vpnSettingsRepository;
 
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
+
+    @Autowired
+    private JavaMailSender mailSender;
+
     @Override
     public void generateKey(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден: " + userId));
 
-        String configData = generateWireGuardConfigForUser(user);
-
-        VPNKey key = new VPNKey();
-        key.setUser(user);
-        key.setKeyData(configData);
-
-        vpnKeyRepository.save(key);
+        rabbitTemplate.convertAndSend(RabbitMQConfig.VPN_QUEUE,
+                new VpnKeyGenerationRequest(userId, user.getEmail()));
     }
 
     @Override
@@ -50,6 +53,44 @@ public class VPNKeyServiceImpl implements VPNKeyService {
             throw new IllegalArgumentException("VPN ключ не найден: " + keyId);
         }
         vpnKeyRepository.deleteById(keyId);
+    }
+
+    public void notifyExpiringKeys() {
+        int monthsLimit = getKeyLifetimeMonths();
+        LocalDateTime now = LocalDateTime.now();
+
+        List<VPNKey> keys = vpnKeyRepository.findAll();
+
+        for (VPNKey key : keys) {
+            if (key.getNotifiedAboutExpiry()) continue;
+
+            LocalDateTime expirationDate = key.getCreatedAt().plusMonths(monthsLimit);
+
+            long daysUntilExpiry = java.time.Duration.between(now, expirationDate).toDays();
+
+            if (daysUntilExpiry <= getKeyDaysBeforeNotifyExpiringKeys() && daysUntilExpiry >= 0) {
+                User user = key.getUser();
+                String email = user.getEmail();
+                String subject = "Ваш VPN ключ скоро истекает";
+                String message = String.format(
+                        "Здравствуйте, %s!\n\nВаш VPN ключ истекает через %d дней — %s.\nПожалуйста, обновите или сгенерируйте новый ключ при необходимости.",
+                        user.getEmail(),
+                        daysUntilExpiry,
+                        expirationDate.toLocalDate()
+                );
+
+                sendEmail(email, subject, message);
+
+                key.setNotifiedAboutExpiry(true);
+                vpnKeyRepository.save(key);
+            }
+        }
+    }
+
+    private int getKeyDaysBeforeNotifyExpiringKeys() {
+        return vpnSettingsRepository.findByKey(ConfigKeys.DAYS_BEFORE_NOTIFY_EXPIRING_KEYS)
+                .map(setting -> Integer.parseInt(setting.getValue()))
+                .orElseThrow(() -> new IllegalArgumentException("DAYS_BEFORE_NOTIFY_EXPIRING_KEYS setting is missing in the database"));
     }
 
     private int getKeyLifetimeMonths() {
@@ -86,13 +127,15 @@ public class VPNKeyServiceImpl implements VPNKeyService {
         return vpnKeyRepository.findByUser(user);
     }
 
-    private String generateWireGuardConfigForUser(User user) {
-        Properties props = new Properties();
-        try (FileInputStream fis = new FileInputStream("vpnconfig")) {
-            props.load(fis);
-            return props.getProperty("vpn.key");
-        } catch (IOException e) {
-            throw new RuntimeException("Ошибка при чтении конфигурации", e);
+    private void sendEmail(String to, String subject, String text) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(to);
+            message.setSubject(subject);
+            message.setText(text);
+            mailSender.send(message);
+        } catch (Exception e) {
+            System.err.println("Не удалось отправить email: " + e.getMessage());
         }
     }
 

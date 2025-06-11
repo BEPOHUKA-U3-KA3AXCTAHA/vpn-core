@@ -21,6 +21,9 @@ public class VPNKey {
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Column(name = "notified_about_expiry")
+    private boolean notifiedAboutExpiry;
+
     // --- Constructors ---
     public VPNKey() {
         this.createdAt = LocalDateTime.now();
@@ -59,5 +62,17 @@ public class VPNKey {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public boolean setNotifiedAboutExpiry() {
+        return notifiedAboutExpiry;
+    }
+
+    public boolean getNotifiedAboutExpiry() {
+        return notifiedAboutExpiry;
+    }
+
+    public void setNotifiedAboutExpiry(boolean notifiedAboutExpiry) {
+        this.notifiedAboutExpiry = notifiedAboutExpiry;
     }
 }
