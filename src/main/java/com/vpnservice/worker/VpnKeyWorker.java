@@ -16,7 +16,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.Optional;
-import java.util.UUID;
 
 @Component
 public class VpnKeyWorker {
@@ -34,7 +33,7 @@ public class VpnKeyWorker {
     }
 
     @RabbitListener(queues = RabbitMQConfig.VPN_QUEUE)
-    public void handleVpnKeyRequest(VpnKeyGenerationRequest request) {
+    public void handleVpnKeyRequest(VpnKeyGenerationRequest request) throws IOException, InterruptedException {
         try {
             Thread.sleep(3000); // пауза 3 секунды
         } catch (InterruptedException e) {
@@ -63,24 +62,39 @@ public class VpnKeyWorker {
         saveConfigToFile(config, user.getEmail());
     }
 
-    private String generateWireGuardConfig(User user) {
-        // 🧪 Пока что мок, позже заменишь на shell команду
-        String privateKey = "MOCKED_PRIVATE_KEY_" + UUID.randomUUID();
-        String publicKey = "SERVER_PUBLIC_KEY";
+    private String generateWireGuardConfig(User user) throws IOException, InterruptedException {
+        // Генерация приватного ключа клиента
+        String clientPrivateKey = exec("wg genkey");
+
+        // Генерация публичного ключа клиента
+        String clientPublicKey = execWithInput("wg pubkey", clientPrivateKey);
+
+        // Назначаем IP-адрес клиенту
         String clientIp = "10.0.0." + (int) (Math.random() * 100 + 2);
 
-        return """
-                [Interface]
-                PrivateKey = %s
-                Address = %s/32
-                DNS = 1.1.1.1
+        // 🔐 Добавляем клиента на сервер
+        exec("sudo wg set wg0 peer %s allowed-ips %s/32".formatted(clientPublicKey.trim(), clientIp));
 
-                [Peer]
-                PublicKey = %s
-                Endpoint = vpn.example.com:51820
-                AllowedIPs = 0.0.0.0/0
-                PersistentKeepalive = 25
-                """.formatted(privateKey, clientIp, publicKey);
+        // 📄 Генерим клиентский конфиг
+        String serverPublicKey = execWithInput("wg pubkey", readFile("wireguard-secrets/server_private_key")).trim();
+
+        return """
+            [Interface]
+            PrivateKey = %s
+            Address = %s/32
+            DNS = 1.1.1.1
+
+            [Peer]
+            PublicKey = %s
+            Endpoint = %s:51820
+            AllowedIPs = 0.0.0.0/0
+            PersistentKeepalive = 25
+            """.formatted(
+                clientPrivateKey.trim(),
+                clientIp,
+                serverPublicKey,
+                "vpn.example.com" // заменишь на свой IP или домен
+        );
     }
 
     private void sendEmail(String to, String subject, String text) {
@@ -111,4 +125,32 @@ public class VpnKeyWorker {
             System.err.println("Ошибка при сохранении конфигурации в файл.");
         }
     }
+
+    private String exec(String command) throws IOException, InterruptedException {
+        Process process = new ProcessBuilder(command.split(" "))
+                .redirectErrorStream(true)
+                .start();
+
+        int exitCode = process.waitFor();
+        if (exitCode != 0) {
+            throw new RuntimeException("Ошибка выполнения команды: " + command);
+        }
+
+        return new String(process.getInputStream().readAllBytes());
+    }
+
+    private String execWithInput(String command, String input) throws IOException, InterruptedException {
+        Process process = new ProcessBuilder("bash", "-c", command).start();
+        try (var os = process.getOutputStream()) {
+            os.write(input.getBytes());
+            os.flush();
+        }
+        process.waitFor();
+        return new String(process.getInputStream().readAllBytes());
+    }
+
+    private String readFile(String path) throws IOException {
+        return Files.readString(Path.of(path));
+    }
+
 }

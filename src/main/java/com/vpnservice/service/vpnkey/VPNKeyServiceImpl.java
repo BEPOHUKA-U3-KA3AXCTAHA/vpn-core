@@ -15,9 +15,14 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class VPNKeyServiceImpl implements VPNKeyService {
@@ -104,13 +109,97 @@ public class VPNKeyServiceImpl implements VPNKeyService {
         int monthsLimit = getKeyLifetimeMonths();
         LocalDateTime cutoffDate = LocalDateTime.now().minusMonths(monthsLimit);
 
+        // Находим старые ключи
         List<VPNKey> oldKeys = vpnKeyRepository.findAll().stream()
                 .filter(k -> k.getCreatedAt().isBefore(cutoffDate))
                 .toList();
 
         if (!oldKeys.isEmpty()) {
-            vpnKeyRepository.deleteAll(oldKeys);
+            // Удаляем конфигурацию из WireGuard для каждого старого ключа
+            for (VPNKey key : oldKeys) {
+                String config = key.getKeyData(); // Получаем полный конфиг
+                String privateKey = extractPrivateKey(config); // Извлекаем приватный ключ клиента из конфигурации
+
+                if (privateKey != null) {
+                    // Генерируем публичный ключ из приватного
+                    String publicKey = generatePublicKeyFromPrivate(privateKey);
+                    try {
+                        // Выполняем команду для удаления клиента из конфигурации WireGuard
+                        exec("sudo wg set wg0 peer " + publicKey.trim() + " remove");
+                        System.out.println("Удален клиент с публичным ключом: " + publicKey);
+
+                        // Удаляем конфигурационный файл клиента из папки configs
+                        String username = key.getUser().getEmail(); // Предполагаем, что у ключа есть имя пользователя
+                        Path configFilePath = Path.of("configs", username + "_vpn_config.conf");
+
+                        // Удаляем файл, если он существует
+                        if (Files.exists(configFilePath)) {
+                            Files.delete(configFilePath);
+                            System.out.println("Конфигурационный файл удален: " + configFilePath);
+                        }
+
+                        // Удаляем ключ из базы данных (по одному)
+                        vpnKeyRepository.delete(key);
+                    } catch (IOException | InterruptedException e) {
+                        System.err.println("Не удалось удалить конфигурацию для ключа: " + publicKey);
+                        e.printStackTrace();
+                    }
+                } else {
+                    System.err.println("Не удалось извлечь публичный ключ из конфига для пользователя.");
+                }
+            }
         }
+    }
+
+    // Метод для извлечения приватного ключа из конфигурации
+    private String extractPrivateKey(String config) {
+        // Регулярное выражение для извлечения приватного ключа
+        String privateKeyPattern = "PrivateKey = ([A-Za-z0-9+/=]+)";
+        Pattern pattern = Pattern.compile(privateKeyPattern);
+        Matcher matcher = pattern.matcher(config);
+
+        if (matcher.find()) {
+            return matcher.group(1); // Возвращаем найденный приватный ключ
+        }
+
+        return null; // Если приватный ключ не найден
+    }
+
+    // Метод для генерации публичного ключа из приватного
+    private String generatePublicKeyFromPrivate(String privateKey) {
+        try {
+            // Используем команду wg pubkey для генерации публичного ключа
+            String publicKey = execWithInput("wg pubkey", privateKey.trim());
+            return publicKey.trim(); // Возвращаем публичный ключ
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+            System.err.println("Ошибка при генерации публичного ключа");
+        }
+
+        return null; // В случае ошибки
+    }
+
+    private String exec(String command) throws IOException, InterruptedException {
+        Process process = new ProcessBuilder(command.split(" "))
+                .redirectErrorStream(true)
+                .start();
+
+        int exitCode = process.waitFor();
+        if (exitCode != 0) {
+            throw new RuntimeException("Ошибка выполнения команды: " + command);
+        }
+
+        return new String(process.getInputStream().readAllBytes());
+    }
+
+    private String execWithInput(String command, String input) throws IOException, InterruptedException {
+        Process process = new ProcessBuilder("bash", "-c", command).start();
+        try (var os = process.getOutputStream()) {
+            os.write(input.getBytes());
+            os.flush();
+        }
+        process.waitFor();
+        return new String(process.getInputStream().readAllBytes());
     }
 
     public Optional<VPNKey> getKeyByUser(Long id) {
